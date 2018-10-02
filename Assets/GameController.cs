@@ -3,14 +3,23 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+public class PlayOutput
+{
+    public Player actor;
+    public Player receiver;
+    public int playValue;
+    public bool hasNext;
+    public bool success;
+}
 public class Team {
 	public string name;
-	public Player[] players = new Player[10];
+	public Player[] players = new Player[11];
 }
 public class Player
 {
 	public string name;
 	public string pos;
+    public int number;
 	public PlayerStats stats = new PlayerStats();
 }
 public class PlayerStats {
@@ -35,7 +44,7 @@ public class GameController : MonoBehaviour {
 
 	private Team[] teams = new Team[2];
 
-	Player playMaker;
+	// Player playMaker;
 	Player[] playersInPlay;
 
 	private bool playEnded = false;
@@ -51,8 +60,15 @@ public class GameController : MonoBehaviour {
 		{
 			name = "Botafogo",
 		};
+        Team teamB = new Team
+        {
+            name = "Criciúma",
+        };
+        teams[0] = teamA;
+        teams[1] = teamB;
 
-        ArrayList namesTeamA = new ArrayList(10);
+        ArrayList namesTeamA = new ArrayList(11);
+        namesTeamA.Add("Venâncio");
         namesTeamA.Add("Juca");
         namesTeamA.Add("Julio Castro");
         namesTeamA.Add("Antonio Pereira");
@@ -64,7 +80,14 @@ public class GameController : MonoBehaviour {
         namesTeamA.Add("Jarbas");
         namesTeamA.Add("Charles");
 
-        ArrayList positionsTeamA = new ArrayList(10);
+        Debug.Log("Name team a" + namesTeamA[0]);
+
+        List<ArrayList> names = new List<ArrayList>(2);
+        names.Add(namesTeamA);
+        names.Add(namesTeamA);
+
+        ArrayList positionsTeamA = new ArrayList(11);
+        positionsTeamA.Add("gk");
         positionsTeamA.Add("lat");
         positionsTeamA.Add("zag");
         positionsTeamA.Add("zag");
@@ -76,52 +99,68 @@ public class GameController : MonoBehaviour {
         positionsTeamA.Add("atc");
         positionsTeamA.Add("atc");
 
-        for (int i = 0; i < 10; i++)
+        List<ArrayList> positions = new List<ArrayList>(1);
+        positions.Add(positionsTeamA);
+
+        for (int y = 0; y < 2; y++)
         {
-            Player player = new Player();
-            player.name = (string)namesTeamA[i];
-            player.pos = (string)positionsTeamA[i];
-            Debug.Log("player " + player.stats);
-            if (player.pos == "lat")
+            for (int i = 0; i < 11; i++)
             {
-                player.stats.pass = Random.Range(2, 4);
-                player.stats.shot = Random.Range(2, 3);
-                player.stats.finishing = Random.Range(1, 2);
-            } else if (player.pos == "zag")
-            {
-                player.stats.pass = Random.Range(2, 3);
-                player.stats.shot = Random.Range(1, 5);
-                player.stats.finishing = Random.Range(2, 2);
-            }
-            else if (player.pos == "vol")
-            {
-                player.stats.pass = Random.Range(3, 5);
-                player.stats.shot = Random.Range(3, 6);
-                player.stats.finishing = Random.Range(2, 3);
-            }
-            else if (player.pos == "meia")
-            {
-                player.stats.pass = Random.Range(4, 5);
-                player.stats.shot = Random.Range(4, 6);
-                player.stats.finishing = Random.Range(3, 4);
-            } else if (player.pos == "atc")
-            {
-                player.stats.pass = Random.Range(3, 4);
-                player.stats.shot = Random.Range(4, 6);
-                player.stats.finishing = Random.Range(4, 6);
-            }
+                Player player = new Player();
+                player.number = i + 1;
 
-            teamA.players[i] = player;
+                ArrayList namesLocal = names[y];
+                player.name = (string)namesLocal[i];
+
+                ArrayList positionsLocal = positions[0];
+                player.pos = (string)positionsLocal[i];
+
+                if (player.pos == "gk")
+                {
+                    player.stats.pass = Random.Range(2, 4);
+                    player.stats.shot = Random.Range(2, 3);
+                    player.stats.finishing = Random.Range(1, 2);
+                }
+                else if (player.pos == "lat")
+                {
+                    player.stats.pass = Random.Range(2, 4);
+                    player.stats.shot = Random.Range(2, 3);
+                    player.stats.finishing = Random.Range(1, 2);
+                }
+                else if (player.pos == "zag")
+                {
+                    player.stats.pass = Random.Range(2, 3);
+                    player.stats.shot = Random.Range(1, 5);
+                    player.stats.finishing = Random.Range(2, 2);
+                }
+                else if (player.pos == "vol")
+                {
+                    player.stats.pass = Random.Range(3, 5);
+                    player.stats.shot = Random.Range(3, 6);
+                    player.stats.finishing = Random.Range(2, 3);
+                }
+                else if (player.pos == "meia")
+                {
+                    player.stats.pass = Random.Range(4, 5);
+                    player.stats.shot = Random.Range(4, 6);
+                    player.stats.finishing = Random.Range(3, 4);
+                }
+                else if (player.pos == "atc")
+                {
+                    player.stats.pass = Random.Range(3, 4);
+                    player.stats.shot = Random.Range(4, 6);
+                    player.stats.finishing = Random.Range(4, 6);
+                }
+
+                teams[y].players[i] = player;
+            }
         }
-
-        Debug.Log(teamA);
-        teams[0] = teamA;
 
         string teamAContent = "";
 
         foreach (Player playerTeamA in teams[0].players)
         {
-            teamAContent += playerTeamA.name + " (" + playerTeamA.pos + ")\n";
+            teamAContent += "["+playerTeamA.number+"]" + playerTeamA.name + " (" + playerTeamA.pos + ")\n";
             teamAContent += "Pass: "+ playerTeamA.stats.pass + "\n";
             teamAContent += "Shot: " + playerTeamA.stats.shot + "\n";
             teamAContent += "Finishing: " + playerTeamA.stats.finishing + "\n\n";
@@ -134,35 +173,50 @@ public class GameController : MonoBehaviour {
 
 		timer += Time.deltaTime * spedUpTime;
 
-		if (timer >= steps && currentZone < 10)
+		if (timer >= steps && currentZone < 50)
 		{
 			string actionText = "";
-			ArrayList play;
+			// ArrayList play;
 
-			play = Play0();
-			actionText += "\n" + play[0];
+			PlayOutput play = Play0();
+            if (play.success)
+            {
+                actionText += "\n["+ play.actor.pos + "]" + play.actor.name + " PASSOU da ZAGA para a VOLANCIA";
+                play = Play1(play.receiver);
+                if (play.success)
+                {
+                    actionText += "\n[" + play.actor.pos + "]" + play.actor.name + " PASSOU da VOLANCIA para o MEIO";
+                    play = Play2(play.receiver);
 
-			if ((bool)play[1])
-			{
-				play = Play1();
-				actionText += "\n" + play[0];
-			}
-            if ((bool)play[1])
-            {
-                play = Play2();
-                actionText += "\n" + play[0];
-            }
-            if ((bool)play[1])
-            {
-                play = Play3();
-                actionText += "\n" + play[0];
-            }
-            if ((bool)play[1])
-            {
-                play = Play4();
-                actionText += "\n" + play[0];
-            }
+                    if (play.success)
+                    {
+                        actionText += "\n[" + play.actor.pos + "]" + play.actor.name + " PASSOU da MEIO para ENTRADA DA AREA";
 
+                        play = Play3(play.receiver);
+                        if (play.success)
+                        {
+                            actionText += "\n[" + play.actor.pos + "]" + play.actor.name + " passou da ENTRADA DA AREA para DENTRO DA AREA";
+
+                            play = Play4(play.receiver);
+                            actionText += "\n[" + play.actor.pos + "]" + play.actor.name + " finalizou ("+play.playValue+")";
+                        } else
+                        {
+                            actionText += "\n[" + play.actor.pos + "]" + play.actor.name + " errou passe da ENTRADA DA AREA para DENTRO DA AREA";
+                        }
+                    }
+                    else
+                    {
+                        actionText += "\n[" + play.actor.pos + "]" + play.actor.name + " errou o passe para a ENTRADA DA AREA";
+                    }
+                } else
+                {
+                    actionText += "\n[" + play.actor.pos + "]" + play.actor.name + " errou o passe para o MEIO";
+                }
+            } else
+            {
+                actionText += "\n[" + play.actor.pos + "]" + play.actor.name + " ERROU o passe na ZAGA";
+            }
+           
             GameObject newTextObject = new GameObject();
 			newTextObject.AddComponent<Text>();
 			newTextObject.GetComponent<Text>().text = actionText;
@@ -192,78 +246,241 @@ public class GameController : MonoBehaviour {
 		return Random.Range(1, sides);
 	}
 
-	ArrayList Play0()
+	PlayOutput Play0()
 	{
-		ArrayList output  = new ArrayList(2);
+		PlayOutput output  = new PlayOutput();
+    
+        Player actor = new Player();
+        Player receiver = new Player();
 
-		playersInPlay = new Player[4];
-		playersInPlay[0] = teams[0].players[0];
-		playersInPlay[1] = teams[0].players[1];
-		playersInPlay[2] = teams[0].players[2];
-		playersInPlay[3] = teams[0].players[3];
+        Player[] playersInPlay = new Player[4];
+        Player[] playersToReceive = new Player[4];
 
-		playMaker = playersInPlay[Random.Range(1, playersInPlay.Length)];
+        // Laterais e zagueiros
+		playersInPlay[0] = teams[0].players[1];
+		playersInPlay[1] = teams[0].players[2];
+		playersInPlay[2] = teams[0].players[3];
+		playersInPlay[3] = teams[0].players[4];
 
-		int result = RollDice(playMaker.stats.pass + 10);
+        // Laterais e volantes
+        playersToReceive[0] = teams[0].players[1];
+        playersToReceive[1] = teams[0].players[4];
+        playersToReceive[2] = teams[0].players[5];
+        playersToReceive[3] = teams[0].players[6];
 
-		if (result == 1)
-		{
-			output.Add("Jogador " + playMaker.name + "(" + playMaker.pos + ") errou o passe.");
-			output.Add(false);
-		}
-		else
-		{
-			output.Add("Jogador " + playMaker.name + "(" + playMaker.pos + ") passou o fino!!!.");
-			output.Add(true);
-		}
+        int higher = 0;
+        for (int i = 0; i < playersInPlay.Length; i++)
+        {
+            int currentHit = RollDice(6);
+            if (currentHit > higher)
+            {
+                higher = currentHit;
+                actor = playersInPlay[i];
+            }
+        }
+
+        if (DontHit(actor.stats.pass + 5))
+        {
+            //Get the receiver
+            higher = 0;
+            for (int i = 0; i < playersToReceive.Length; i++)
+            {
+                int currentHit = RollDice(6);
+                // O Recebedor não pode receber dele mesmo
+                if (currentHit > higher && playersToReceive[i].number != actor.number)
+                {
+                    higher = currentHit;
+                    receiver = playersToReceive[i];
+                }
+            }
+
+            Debug.Log("Player " + actor.name);
+
+            output.actor = actor;
+            output.receiver = receiver;
+            output.success = true;
+        } else
+        {
+            output.actor = actor;
+            output.success = false;
+        }
+		return output;
+	}
+    // Volancia para o meio
+	public PlayOutput Play1(Player actor)
+	{
+        PlayOutput output = new PlayOutput();
+        output.actor = actor;
+
+        // Player actor = new Player();
+        Player receiver = new Player();
+
+        // Player[] playersInPlay = new Player[4];
+        Player[] playersToReceive = new Player[6];
+
+        // Meias, laterais e volantes
+        playersToReceive[0] = teams[0].players[1];
+        playersToReceive[1] = teams[0].players[4];
+        playersToReceive[2] = teams[0].players[5];
+        playersToReceive[3] = teams[0].players[6];
+        playersToReceive[4] = teams[0].players[7];
+        playersToReceive[5] = teams[0].players[8];
+
+        // Actor faz a jogada
+        if (DontHit(actor.stats.pass))
+        {
+            // Get The receiver
+            int higher = 0;
+            foreach (Player player in playersToReceive)
+            {
+                int hit = RollDice(6);
+                // Meias tem mais chance de receber
+                if (player.pos == "meia")
+                {
+                    hit += 1;
+                }
+                if (hit > higher && player.number != actor.number)
+                {
+                    higher = hit;
+                    receiver = player;
+                };
+            }
+
+            output.receiver = receiver;
+            output.success = true;
+
+        } else
+        {
+            output.success = false;
+        }
 
 		return output;
 	}
-	public ArrayList Play1()
-	{
-		ArrayList output = new ArrayList(2);
 
-		playersInPlay = new Player[4];
-		// Laterais sobem
-		playersInPlay[0] = teams[0].players[0]; // Lateral que subiu
-		playersInPlay[1] = teams[0].players[3]; // Lateral que subiu
-		playersInPlay[2] = teams[0].players[4]; // Volantaço
-		playersInPlay[3] = teams[0].players[5]; // Volantaço
+    public PlayOutput Play2(Player actor)
+    {
+        PlayOutput output = new PlayOutput();
+        output.actor = actor;
 
-		int higher = 0;
+        // Player actor = new Player();
+        Player receiver = new Player();
 
-		foreach (Player player in playersInPlay)
-		{
-			int pass = RollDice(player.stats.pass);
-			// Volante tem mais chances de passar do que laterais
-			if (player.pos == "vol")
-			{
-				pass += 1;
-			}
-			if (pass > higher)
-			{
-				higher = pass;
-				playMaker = player;
-			};
-		}
+        // Player[] playersInPlay = new Player[4];
+        Player[] playersToReceive = new Player[6];
 
-		int result1 = RollDice(playMaker.stats.pass + 5);
-        Debug.Log("Result do roll Dice: " + result1);
-		if (result1 == 1)
-		{
-			output.Add(playMaker.name + "(" + playMaker.pos + ") errou o passe na volancia.");
-			output.Add(false);
-		}
-		else
-		{
-			output.Add(playMaker.name + "(" + playMaker.pos + ") passou fino na volacia!!!.");
-			output.Add(true);
-		}
+        // Volantes, Meias e Atacantes
+        playersToReceive[0] = teams[0].players[5];
+        playersToReceive[1] = teams[0].players[6];
+        playersToReceive[2] = teams[0].players[7];
+        playersToReceive[3] = teams[0].players[8];
+        playersToReceive[4] = teams[0].players[9];
+        playersToReceive[5] = teams[0].players[10];
 
-		return output;
-	}
+        // Actor faz a jogada
+        if (DontHit(actor.stats.pass))
+        {
+            // Get The receiver
+            int higher = 0;
+            foreach (Player player in playersToReceive)
+            {
+                int hit = RollDice(6);
+                // Meias tem duas vezes mais chance de receber
+                if (player.pos == "meia")
+                {
+                    hit += 2;
+                } else if (player.pos == "atc") // Atacantes tem +1 chances de receber
+                {
+                    hit += 1;
+                }
 
-    public ArrayList Play2()
+                if (hit > higher && player.number != actor.number)
+                {
+                    higher = hit;
+                    receiver = player;
+                };
+            }
+
+            output.receiver = receiver;
+            output.success = true;
+        }
+        else
+        {
+            output.success = false;
+        }
+
+        return output;
+    }
+
+    // Entrada da area pra dentro da area ou chute
+    public PlayOutput Play3(Player actor)
+    {
+        PlayOutput output = new PlayOutput();
+        output.actor = actor;
+
+        // Player actor = new Player();
+        Player receiver = new Player();
+
+        // Player[] playersInPlay = new Player[4];
+        Player[] playersToReceive = new Player[8];
+
+        // Laterais, Volantes, Meias e Atacantes
+        playersToReceive[0] = teams[0].players[1];
+        playersToReceive[1] = teams[0].players[4];
+        playersToReceive[2] = teams[0].players[5];
+        playersToReceive[3] = teams[0].players[6];
+        playersToReceive[4] = teams[0].players[7];
+        playersToReceive[5] = teams[0].players[8];
+        playersToReceive[6] = teams[0].players[9];
+        playersToReceive[7] = teams[0].players[10];
+
+        // Actor faz a jogada
+        if (DontHit(actor.stats.pass))
+        {
+            // Get The receiver
+            int higher = 0;
+            foreach (Player player in playersToReceive)
+            {
+                int hit = RollDice(6);
+                // Obs.: Unico que não recebe buff é o volante
+                if (player.pos == "lat" || player.pos == "meia")
+                {
+                    hit += 1;
+                }
+                else if (player.pos == "atc") // Atacantes tem +3 chances de receber
+                {
+                    hit += 3;
+                }
+
+                if (hit > higher && player.number != actor.number)
+                {
+                    higher = hit;
+                    receiver = player;
+                };
+            }
+
+            output.receiver = receiver;
+            output.hasNext = true;
+            output.success = true;
+        }
+        else
+        {
+            output.success = false;
+        }
+
+        return output;
+    }
+    public PlayOutput Play4(Player actor)
+    {
+        PlayOutput output = new PlayOutput();
+        output.actor = actor;
+
+        output.playValue = actor.stats.finishing;
+        output.hasNext = false;
+        output.success = true;
+
+        return output;
+    }
+    /**public ArrayList Play2()
     {
         ArrayList output = new ArrayList(2);
 
@@ -400,6 +617,11 @@ public class GameController : MonoBehaviour {
         output.Add(true);
 
         return output;
+    }**/
+
+    bool DontHit(int value)
+    {
+        return !(RollDice(value) == 1);
     }
 
 }
