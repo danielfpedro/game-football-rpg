@@ -7,6 +7,8 @@ public class PlayOutput
 {
     public Player actor;
     public Player receiver;
+    public string debugText;
+    public bool jump = false;
     public int playValue;
     public bool hasNext;
     public bool success;
@@ -14,6 +16,8 @@ public class PlayOutput
 public class Team {
 	public string name;
 	public Player[] players = new Player[11];
+    public int formation;
+    public TeamMindset mindset;
 }
 public class Player
 {
@@ -24,6 +28,7 @@ public class Player
 }
 public class PlayerStats {
 	public int pass;
+    public int longPass;
     public int shot;
     public int finishing;
 }
@@ -36,7 +41,9 @@ public class GameController : MonoBehaviour {
 	public float spedUpTime = 2;
 	private float timer;
 
-	private float steps = 2;
+    public TeamMindset teamAMindset;
+
+    private float steps = .2f;
 
 	public Text actionsText;
 
@@ -59,6 +66,8 @@ public class GameController : MonoBehaviour {
 		Team teamA = new Team
 		{
 			name = "Botafogo",
+            formation = Formation.FORMATION_442,
+            mindset = teamAMindset
 		};
         Team teamB = new Team
         {
@@ -118,36 +127,42 @@ public class GameController : MonoBehaviour {
                 if (player.pos == "gk")
                 {
                     player.stats.pass = Random.Range(2, 4);
+                    player.stats.longPass = Random.Range(2, 4);
                     player.stats.shot = Random.Range(2, 3);
                     player.stats.finishing = Random.Range(1, 2);
                 }
                 else if (player.pos == "lat")
                 {
-                    player.stats.pass = Random.Range(2, 4);
+                    player.stats.pass = Random.Range(6, 6);
+                    player.stats.longPass = Random.Range(6, 6);
                     player.stats.shot = Random.Range(2, 3);
                     player.stats.finishing = Random.Range(1, 2);
                 }
                 else if (player.pos == "zag")
                 {
                     player.stats.pass = Random.Range(2, 3);
+                    player.stats.longPass = Random.Range(1, 2);
                     player.stats.shot = Random.Range(1, 5);
                     player.stats.finishing = Random.Range(2, 2);
                 }
                 else if (player.pos == "vol")
                 {
-                    player.stats.pass = Random.Range(3, 5);
+                    player.stats.pass = Random.Range(6, 6);
+                    player.stats.longPass = Random.Range(6, 6);
                     player.stats.shot = Random.Range(3, 6);
                     player.stats.finishing = Random.Range(2, 3);
                 }
                 else if (player.pos == "meia")
                 {
-                    player.stats.pass = Random.Range(4, 5);
+                    player.stats.pass = Random.Range(6, 6);
+                    player.stats.longPass = Random.Range(6, 6);
                     player.stats.shot = Random.Range(4, 6);
                     player.stats.finishing = Random.Range(3, 4);
                 }
                 else if (player.pos == "atc")
                 {
                     player.stats.pass = Random.Range(3, 4);
+                    player.stats.longPass = Random.Range(3, 4);
                     player.stats.shot = Random.Range(4, 6);
                     player.stats.finishing = Random.Range(4, 6);
                 }
@@ -176,32 +191,40 @@ public class GameController : MonoBehaviour {
 		if (timer >= steps && currentZone < 50)
 		{
 			string actionText = "";
-			// ArrayList play;
 
-			PlayOutput play = Play0();
-            if (play.success)
+            PlayOutput play = PlayBook.ZagaToVol(teams[0]);
+            if (play.hasNext)
             {
                 actionText += "\n["+ play.actor.pos + "]" + play.actor.name + " PASSOU da ZAGA para a VOLANCIA";
+                
                 play = Play1(play.receiver);
                 if (play.success)
                 {
                     actionText += "\n[" + play.actor.pos + "]" + play.actor.name + " PASSOU da VOLANCIA para o MEIO";
-                    play = Play2(play.receiver);
-
+                    
+                    play = Play2(teams[0], play.receiver);
                     if (play.success)
                     {
-                        actionText += "\n[" + play.actor.pos + "]" + play.actor.name + " PASSOU da MEIO para ENTRADA DA AREA";
+                        actionText += "\n" + play.debugText;
 
-                        play = Play3(play.receiver);
-                        if (play.success)
+                        if (!play.jump)
                         {
-                            actionText += "\n[" + play.actor.pos + "]" + play.actor.name + " passou da ENTRADA DA AREA para DENTRO DA AREA";
+                            play = Play3(play.receiver);
+                            if (play.success)
+                            {
+                                actionText += "\n[" + play.actor.pos + "]" + play.actor.name + " passou da ENTRADA DA AREA para DENTRO DA AREA";
 
+                                play = Play4(play.receiver);
+                                actionText += "\n[" + play.actor.pos + "]" + play.actor.name + " finalizou (" + play.playValue + ")";
+                            }
+                            else
+                            {
+                                actionText += "\n[" + play.actor.pos + "]" + play.actor.name + " errou passe da ENTRADA DA AREA para DENTRO DA AREA";
+                            }
+                        }
+                        else {
                             play = Play4(play.receiver);
-                            actionText += "\n[" + play.actor.pos + "]" + play.actor.name + " finalizou ("+play.playValue+")";
-                        } else
-                        {
-                            actionText += "\n[" + play.actor.pos + "]" + play.actor.name + " errou passe da ENTRADA DA AREA para DENTRO DA AREA";
+                            actionText += "\n[" + play.actor.pos + "]" + play.actor.name + " finalizou (" + play.playValue + ")";
                         }
                     }
                     else
@@ -246,7 +269,7 @@ public class GameController : MonoBehaviour {
 		return Random.Range(1, sides);
 	}
 
-	PlayOutput Play0()
+	/**PlayOutput Play0()
 	{
 		PlayOutput output  = new PlayOutput();
     
@@ -305,7 +328,7 @@ public class GameController : MonoBehaviour {
             output.success = false;
         }
 		return output;
-	}
+	}**/
     // Volancia para o meio
 	public PlayOutput Play1(Player actor)
 	{
@@ -357,7 +380,9 @@ public class GameController : MonoBehaviour {
 		return output;
 	}
 
-    public PlayOutput Play2(Player actor)
+    // ZONA 02
+    // Pode tocar pra frente ou fazer o passe longo e pular uma zona
+    public PlayOutput Play2(Team team, Player actor)
     {
         PlayOutput output = new PlayOutput();
         output.actor = actor;
@@ -368,44 +393,81 @@ public class GameController : MonoBehaviour {
         // Player[] playersInPlay = new Player[4];
         Player[] playersToReceive = new Player[6];
 
-        // Volantes, Meias e Atacantes
-        playersToReceive[0] = teams[0].players[5];
-        playersToReceive[1] = teams[0].players[6];
-        playersToReceive[2] = teams[0].players[7];
-        playersToReceive[3] = teams[0].players[8];
-        playersToReceive[4] = teams[0].players[9];
-        playersToReceive[5] = teams[0].players[10];
+        // Decide se ele vai lançar longa ou tocar pra frente
+        int longPassBuff = (team.mindset == TeamMindset.BOLA_LONGA) ? 2 : 0;
+        int longPassResult = RollDice(actor.stats.longPass + longPassBuff);
 
-        // Actor faz a jogada
-        if (DontHit(actor.stats.pass))
+        int passBuff = (team.mindset == TeamMindset.TROCA_DE_PASSE) ? 2 : 0;
+        int passResult= RollDice(actor.stats.pass + passBuff);
+
+        // Faz o passe pra frente
+        if (passResult >= longPassResult)
         {
-            // Get The receiver
-            int higher = 0;
-            foreach (Player player in playersToReceive)
+            // Actor faz a jogada
+            if (DontHit(actor.stats.pass))
             {
-                int hit = RollDice(6);
-                // Meias tem duas vezes mais chance de receber
-                if (player.pos == "meia")
+                Player[] availableReceivers = Formation.GetReceiversAvailable(team, 3);
+                // Get The receiver
+                int higher = 0;
+                foreach (Player player in availableReceivers)
                 {
-                    hit += 2;
-                } else if (player.pos == "atc") // Atacantes tem +1 chances de receber
-                {
-                    hit += 1;
+                    int hit = RollDice(6);
+                    // Meias tem duas vezes mais chance de receber
+                    if (player.pos == "meia")
+                    {
+                        hit += 2;
+                    }
+                    else if (player.pos == "atc") // Atacantes tem +1 chances de receber
+                    {
+                        hit += 1;
+                    }
+
+                    if (hit > higher && player.number != actor.number)
+                    {
+                        higher = hit;
+                        receiver = player;
+                    };
                 }
 
-                if (hit > higher && player.number != actor.number)
-                {
-                    higher = hit;
-                    receiver = player;
-                };
+                output.debugText = actor.name + " [" + actor.pos + "] tocou a bola para " + receiver.name + " ["+receiver.pos+"] do MEIO para a ENTRADA DA ÁREA";
+                output.receiver = receiver;
+                output.success = true;
             }
-
-            output.receiver = receiver;
-            output.success = true;
+            else
+            {
+                output.debugText = actor.name + " [" + actor.pos + "] errou o passe no MEIO para DENTRO DA ÁREA";
+                output.success = false;
+            }
         }
-        else
-        {
-            output.success = false;
+        // Pula uma e faz o passe longo
+        else {
+            // Actor faz a jogada
+            if (DontHit(actor.stats.longPass))
+            {
+                Player[] availableReceivers = Formation.GetReceiversAvailable(team, 4);
+                // Get The receiver
+                int higher = 0;
+                foreach (Player player in availableReceivers)
+                {
+                    int hit = RollDice(6);
+
+                    if (hit > higher && player.number != actor.number)
+                    {
+                        higher = hit;
+                        receiver = player;
+                    };
+                }
+
+                output.debugText = actor.name + " [" + actor.pos + "] tocou fez o pase longo para " + receiver.name + " [" + receiver.pos + "] do MEIO para a DENTRO DA ÁREA";
+                output.receiver = receiver;
+                output.jump = true;
+                output.success = true;
+            }
+            else
+            {
+                output.debugText = actor.name + " [" + actor.pos + "] errou o passe no MEIO para DENTRO DA ÁREA";
+                output.success = false;
+            }
         }
 
         return output;
@@ -480,145 +542,7 @@ public class GameController : MonoBehaviour {
 
         return output;
     }
-    /**public ArrayList Play2()
-    {
-        ArrayList output = new ArrayList(2);
-
-        playersInPlay = new Player[6];
-        // Laterais sobem
-
-        playersInPlay[0] = teams[0].players[0]; // Lateral que subiu
-        playersInPlay[1] = teams[0].players[3]; // Lateral que subiu
-        playersInPlay[2] = teams[0].players[4]; // Volantaço
-        playersInPlay[3] = teams[0].players[5]; // Volantaço
-        playersInPlay[4] = teams[0].players[6]; // Meia Afensivo
-        playersInPlay[5] = teams[0].players[7]; // Meia Afensivo
-
-        int higher = 0;
-
-        foreach (Player player in playersInPlay)
-        {
-            int pass = RollDice(player.stats.pass);
-            // Meia tem mais chances de participar que os laterais e os volantes
-            if (player.pos == "meia")
-            {
-                pass += 1;
-            }
-            if (pass > higher)
-            {
-                higher = pass;
-                playMaker = player;
-            };
-        }
-
-        int result1 = RollDice(playMaker.stats.pass);
-        if (result1 == 1)
-        {
-            output.Add(playMaker.name + "(" + playMaker.pos + ") errou o passe na meiuca.");
-            output.Add(false);
-        }
-        else
-        {
-            output.Add(playMaker.name + "(" + playMaker.pos + ") passou fino meiuca!.");
-            output.Add(true);
-        }
-
-        return output;
-    }
-
-    public ArrayList Play3()
-    {
-        Player shotPlayer = new Player();
-        Player passPlayer = new Player();
-
-        ArrayList output = new ArrayList(2);
-
-        playersInPlay = new Player[4];
-        // Volantes subiram
-        playersInPlay[0] = teams[0].players[4]; // Volantaço
-        playersInPlay[1] = teams[0].players[5]; // Volantaço
-        playersInPlay[2] = teams[0].players[6]; // Meia Ofensivo
-        playersInPlay[3] = teams[0].players[7]; // Meia Ofensivo
-
-        int higherShot = 0;
-        foreach (Player player in playersInPlay)
-        {
-            int shot = RollDice(player.stats.shot);
-            if (shot > higherShot)
-            {
-                higherShot = shot;
-                shotPlayer = player;
-            };
-        }
-
-        int higherPass = 0;
-        foreach (Player player in playersInPlay)
-        {
-            int pass = RollDice(player.stats.pass);
-            if (pass > higherPass)
-            {
-                higherPass = pass;
-                passPlayer = player;
-            };
-        }
-
-        if (higherShot > higherPass)
-        {
-            playMaker = shotPlayer;
-            // Do Shot
-            int result1 = RollDice(playMaker.stats.shot);
-            output.Add(playMaker.name + "(" + playMaker.pos + ") deu um chute " + playMaker.stats.shot);
-            output.Add(true);
-        } else
-        {
-            playMaker = passPlayer;
-            int result1 = RollDice(playMaker.stats.pass);
-            if (result1 == 1)
-            {
-                output.Add(playMaker.name + "(" + playMaker.pos + ") errou o passe no meio para dentro da area.");
-                output.Add(false);
-            }
-            else
-            {
-                output.Add(playMaker.name + "(" + playMaker.pos + ") passou fino para dentro da AREA!.");
-                output.Add(true);
-            }
-        }
-
-
-
-        return output;
-    }
-
-    public ArrayList Play4()
-    {
-        ArrayList output = new ArrayList(2);
-
-        playersInPlay = new Player[2];
-        // Laterais sobem
-
-        playersInPlay[0] = teams[0].players[8];
-        playersInPlay[1] = teams[0].players[9];
-
-        int higher = 0;
-
-        foreach (Player player in playersInPlay)
-        {
-            int finishing = RollDice(player.stats.finishing);
-            if (finishing > higher)
-            {
-                higher = finishing;
-                playMaker = player;
-            };
-        }
-
-        int resultDice = RollDice(playMaker.stats.finishing);
-        output.Add(playMaker.name + "(" + playMaker.pos + ") Fnializou " + resultDice);
-        output.Add(true);
-
-        return output;
-    }**/
-
+ 
     bool DontHit(int value)
     {
         return !(RollDice(value) == 1);
